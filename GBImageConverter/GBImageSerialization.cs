@@ -57,12 +57,12 @@ namespace GBImageConverter
 
                 file.WriteLine(@"// Tile Plane Data ");
                 // declare the C array
-                file.WriteLine(string.Format(@"extern const unsigned char {0}[{1}];", filename_without_ext, tile_map.TileCount()));
+                file.WriteLine(string.Format(@"extern const unsigned char {0}{1}[{2}];", filename_without_ext, "_tilemap", tile_map.TileCount()));
 
                 if (tile_map.HasCollisionPlane())
                 {
                     file.WriteLine(@"// Collision Plane Data ");
-                    file.WriteLine(string.Format(@"extern const unsigned char {0}[{1}];", filename_without_ext, tile_map.TileCount()));
+                    file.WriteLine(string.Format(@"extern const unsigned char {0}{1}[{2}];", filename_without_ext, "_collision", tile_map.TileCount()));
                 }
                 file.Write("    ");
             }
