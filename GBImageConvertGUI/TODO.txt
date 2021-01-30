@@ -1,0 +1,63 @@
+﻿TODO - GB IMG CONVERTER and GUI
+
+Export Fixes! top priority
+
+- avoid extern keyword (don't think we're using this tbh)
+- overhaul command line version in order to support better asset building toolchain
+- document the command line functionality! 
+- think about uploading this bitch to github
+
+GUI Niceties
+- optional grid overlay for preview tiles
+
+Map Builder (future want, for now used Tiled and the MapConverter functionality)
+- create the form
+- add a toggle for bgmap mode and collision (square tiles only) mode
+- create map button to kick things off
+- map name
+- save map data/serialization
+- load map data function
+- map create window: name, width, height, include collision plane (tickbox)
+- export to map format used in the image converter but with additional collision plane data
+- on creation fill map with tile 0 (mostly automatic as the array will initialize to this)
+- scrollbar for window to account for larger maps
+- click to get grid position calculation
+- tile selection functionality
+- tile paint with left click func
+- click and drag to draw a box?
+Future thoughts:
+- Save delta to enable undo functionality
+
+Functionality
+- add functionality for multiple tileplanes in tile maps (with plane names etc)
+		- this is sort of done, we have support for one collision plane
+		- might want to add a 'things' plane that has game objects by id
+
+Code Cleanup
+- consolidate the optional shit into an export config class to pass around
+
+GUI Functionality
+- show number of bytes total in the data (accounting for things such as leading byte for tilecount)
+- optional header info (data start/end label, num tiles label, width/height in tiles label)
+- redesign the img convert page once this is done to lay out the information in a nicer way
+
+Other
+- At least try to maintain compatability with command line version of the tool? :S
+
+----DONE----
+- use /* */ for all exported C/H file comments, as // is not supported properly by SDCC
+- optionally generate header files for exports to C (for optimisation and bank switching)
+- added Tiled import functionality from csv
+- added collision planes to tilemaps
+- add a way to load a tileset from img converter
+- make a tilemap class to hold the tilemap and its data such as width/height (and in future additional planes)
+- add optional byte to tilemaps for width/height in tiles
+- GBDK C format export (C array code generated) for MAP and TILES
+- hook up the ASM export code that already exists in the old program for MAP and TILES
+- show tileset data better (num tiles, num duplicate tiles, etc) after preview regenerated
+- dropdown for export type should be functional (export to ASM, BIN and GBDK C formats)
+- export button functionality for img conversion
+- duplicate tiles keep/remove functionality via tickbox
+- implement bitmap export for tileset and final image (just incase you want it for some reason...)
+- Implement custom picturebox class that supports nearest neighbor filtering on zoom/stretch
+- show tileset data (num tiles generated)
