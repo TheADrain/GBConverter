@@ -87,7 +87,7 @@ namespace GBImageConverter
 
         public int Count(bool cullDuplicates)
         {
-            return cullDuplicates ? tiles.Count - NumUniqueDuplicates : tiles.Count;
+            return cullDuplicates ? tiles.Count : TileReplacements.Count;
         }
 
         public GBTile GetTile(int index, bool ignoreReplacements = false)
