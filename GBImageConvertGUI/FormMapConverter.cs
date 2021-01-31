@@ -18,7 +18,8 @@ namespace GBImageConvertGUI
         FormImgConverter _imgConverterForm = null;
 
         private Bitmap _previewTilesBmp = null;
-        List<GBTile> _generated_tile_list = null;
+        //List<GBTile> _generated_tile_list = null;
+        GBTileSet _generated_tile_list = null;
         GBTileMap _tileMap = null;
 
         public FormMapConverter()
@@ -52,7 +53,7 @@ namespace GBImageConvertGUI
             // load the preview of the map file
             if(_tileMap != null && _generated_tile_list != null)
             {
-                picMapPreview.Image = _tileMap.GeneratePreview(_generated_tile_list.ToArray());
+                picMapPreview.Image = _tileMap.GeneratePreview(_generated_tile_list);
                 this.picMapPreview.SizeMode = PictureBoxSizeMode.Zoom;
             }
         }
@@ -60,6 +61,11 @@ namespace GBImageConvertGUI
         private void btnImportTiledCSV_Click(object sender, EventArgs e)
         {
             CSVResultCode result = TiledCSVToGBMap.LoadCSV(out _tileMap);
+            if(_generated_tile_list != null)
+            {
+                // apply the replacements from the loaded tilemap
+                _tileMap.ApplyTileSetReplacements(_generated_tile_list);
+            }
 
             if(result == CSVResultCode.SUCCESS)
             {

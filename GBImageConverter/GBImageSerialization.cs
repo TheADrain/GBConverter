@@ -206,7 +206,7 @@ namespace GBImageConverter
 
         public static void SerializeGBTileDataGBDK_H(
             string filename,
-            List<GBTile> gb_tiles, 
+            GBTileSet gb_tiles, 
             bool prependTileCount)
         {
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(filename))
@@ -222,7 +222,7 @@ namespace GBImageConverter
                 file.WriteLine(string.Format("    Format {0}", "Gameboy 2bpp interleaved"));
                 file.WriteLine(string.Format("    Compression {0}", "None"));
                 file.WriteLine(string.Format("    Tile Size 8x8"));
-                file.WriteLine(string.Format("    Number of Tiles 0 to {0}", gb_tiles.Count - 1));
+                file.WriteLine(string.Format("    Number of Tiles 0 to {0}", gb_tiles.Count() - 1));
                 file.WriteLine(string.Format(""));
                 file.WriteLine(string.Format("    Palette: {0}", "None"));
                 file.WriteLine(string.Format("    SGB Palette: {0}", "None"));
@@ -236,18 +236,18 @@ namespace GBImageConverter
                 if (prependTileCount)
                 {
                     file.WriteLine(@"// Tilemap Data Length in tiles (16 bytes each)");
-                    file.WriteLine(string.Format(@"#define {0}Length {1}", filename_without_ext, gb_tiles.Count.ToString()));
+                    file.WriteLine(string.Format(@"#define {0}Length {1}", filename_without_ext, gb_tiles.Count().ToString()));
                 }
 
                 file.WriteLine(@"// Tilemap Data (one 16-byte tile per line)");
 
                 // generate the c array
-                file.WriteLine(string.Format(@"extern const unsigned char {0}[{1}];", filename_without_ext, gb_tiles.Count*16));
+                file.WriteLine(string.Format(@"extern const unsigned char {0}[{1}];", filename_without_ext, gb_tiles.Count()*16));
             }
         }
 
         public static void SerializeGBTileDataGBDK_C(
-            List<GBTile> gb_tiles, 
+            GBTileSet gb_tiles, 
             bool prependTileCount,
             bool includeHeader = true
             )
@@ -281,7 +281,7 @@ namespace GBImageConverter
                     file.WriteLine(string.Format("    Format {0}", "Gameboy 2bpp interleaved"));
                     file.WriteLine(string.Format("    Compression {0}", "None"));
                     file.WriteLine(string.Format("    Tile Size 8x8"));
-                    file.WriteLine(string.Format("    Number of Tiles 0 to {0}", gb_tiles.Count - 1));
+                    file.WriteLine(string.Format("    Number of Tiles 0 to {0}", gb_tiles.Count() - 1));
                     file.WriteLine(string.Format(""));
                     file.WriteLine(string.Format("    Palette: {0}", "None"));
                     file.WriteLine(string.Format("    SGB Palette: {0}", "None"));
@@ -295,7 +295,7 @@ namespace GBImageConverter
                     if (prependTileCount)
                     {
                         file.WriteLine(@"// Tilemap Data Length in tiles (16 bytes each)");
-                        file.WriteLine(string.Format(@"#define {0}Length {1}", filename_without_ext, gb_tiles.Count.ToString()));
+                        file.WriteLine(string.Format(@"#define {0}Length {1}", filename_without_ext, gb_tiles.Count().ToString()));
                     }
 
                     file.WriteLine(@"// Tilemap Data (one 16-byte tile per line)");
@@ -306,15 +306,15 @@ namespace GBImageConverter
                     file.Write("    ");
                     file.Write("0x");
 
-                    for (int i = 0; i < gb_tiles.Count; i++)
+                    for (int i = 0; i < gb_tiles.Count(); i++)
                     {
-                        byte[] bytes = gb_tiles[i].GetTileBytes();
+                        byte[] bytes = gb_tiles.GetTile(i).GetTileBytes();
                         //Console.WriteLine("DB: " + BitConverter.ToString(bytes));
                         string hexStr = BitConverter.ToString(bytes).Replace("-", ", 0x");
                         file.Write(hexStr);
 
                         // ensure one 16-byte per row, and no comma on last entry
-                        if(i == gb_tiles.Count-1)
+                        if(i == gb_tiles.Count()-1)
                         {
                             file.Write("\n");
                         }
@@ -388,7 +388,7 @@ namespace GBImageConverter
             }
         }
 
-        public static void SerializeGBTileDataRGBASM(List<GBTile> gb_tiles, bool prependTileCount)
+        public static void SerializeGBTileDataRGBASM(GBTileSet gb_tiles, bool prependTileCount)
         {
             // Displays a SaveFileDialog so the user can save the Image
             SaveFileDialog saveFileDialog = new SaveFileDialog();
@@ -408,7 +408,7 @@ namespace GBImageConverter
                     file.WriteLine(string.Format("; Format {0}", "Gameboy 2bpp interleaved"));
                     file.WriteLine(string.Format("; Compression {0}", "None"));
                     file.WriteLine(string.Format("; Tile Size 8x8"));
-                    file.WriteLine(string.Format("; Number of Tiles 0 to {0}", gb_tiles.Count-1));
+                    file.WriteLine(string.Format("; Number of Tiles 0 to {0}", gb_tiles.Count()-1));
                     file.WriteLine(string.Format(""));
                     file.WriteLine(string.Format("; Palette: {0}", "None"));
                     file.WriteLine(string.Format("; SGB Palette: {0}", "None"));
@@ -421,13 +421,13 @@ namespace GBImageConverter
                     if (prependTileCount)
                     {
                         file.WriteLine(@"; Tilemap Data Length in tiles (16 bytes each)");
-                        file.WriteLine(@"DB " + gb_tiles.Count.ToString());
+                        file.WriteLine(@"DB " + gb_tiles.Count().ToString());
                     }
 
                     file.WriteLine(@"; Tilemap Data (one 16-byte tile per line)");
-                    for (int i = 0; i < gb_tiles.Count; i++)
+                    for (int i = 0; i < gb_tiles.Count(); i++)
                     {
-                        byte[] bytes = gb_tiles[i].GetTileBytes();
+                        byte[] bytes = gb_tiles.GetTile(i).GetTileBytes();
                         Console.WriteLine("DB: " + BitConverter.ToString(bytes));
 
                         string hexStr = BitConverter.ToString(bytes).Replace("-", ", $");
@@ -480,7 +480,7 @@ namespace GBImageConverter
             }
         }
 
-        public static void SerializeGBTileDataBinary(List<GBTile> tile_list, bool prependTileCount)
+        public static void SerializeGBTileDataBinary(GBTileSet tile_list, bool prependTileCount)
         {
             // Displays a SaveFileDialog so the user can save the Image
             SaveFileDialog saveFileDialog = new SaveFileDialog();
@@ -496,12 +496,12 @@ namespace GBImageConverter
                     // output single byte for tilecount
                     if (prependTileCount)
                     {
-                        writer.Write((byte)tile_list.Count);
+                        writer.Write((byte)tile_list.Count());
                     }
                     // output 16 bytes per tile, 2 bytes per row
-                    for (int i = 0; i < tile_list.Count; i++)
+                    for (int i = 0; i < tile_list.Count(); i++)
                     {
-                        byte[] bytes = tile_list[i].GetTileBytes();
+                        byte[] bytes = tile_list.GetTile(i).GetTileBytes();
                         for (int j = 0; j < bytes.Length; j++)
                         {
                             writer.Write(bytes[j]);

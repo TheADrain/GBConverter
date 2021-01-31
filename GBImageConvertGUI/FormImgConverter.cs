@@ -23,13 +23,14 @@ namespace GBImageConvertGUI
         int tilemapWidth = 0;
         int tilemapHeight = 0;
 
-        int _tilemapPreviewWidthInTiles = 16;
+        int _tilemapPreviewWidthInTiles = 8;
         int _tilemapPreviewMagnification = 3;
 
-        List<GBTile> _generated_tile_list;
-        public List<GBTile> GetTileList() { return _generated_tile_list; }
+        GBTileSet _generated_tile_list;
+        public GBTileSet GetTileList() { return _generated_tile_list; }
 
         GBTileMap _generated_tile_map;
+        public GBTileMap GetTileMap() { return _generated_tile_map; }
 
         GBImageConverter.OutputFormats _outputFormat = OutputFormats.BIN;
 
@@ -205,13 +206,15 @@ namespace GBImageConvertGUI
             bool removeDupes = this.checkBox_RemoveDupes.Checked;
 
             // build the tile list and tile map
+            _tilemapPreviewWidthInTiles = _previewBmp.Width / 8;
 
             GBImageUtils.ImageToGBTileListAndTileMap(_previewBmp, 
                 out _generated_tile_list, 
                 out _generated_tile_map, 
                 !removeDupes, 
                 out duplicateTiles);
-            _previewTilesBmp = GBImageUtils.PreviewImageFromTileData(_generated_tile_list.ToArray(), _tilemapPreviewWidthInTiles, _palette);
+
+            _previewTilesBmp = GBImageUtils.PreviewImageFromTileData(_generated_tile_list, _tilemapPreviewWidthInTiles, _palette);
 
             // set the preview image
             this.picTiles.Image = _previewTilesBmp;
@@ -223,7 +226,7 @@ namespace GBImageConvertGUI
                 _previewTilesBmp.Height* _tilemapPreviewMagnification);
 
             // populate the output data stats
-            int numTiles = _generated_tile_list.Count;
+            int numTiles = _generated_tile_list.Count();
             this.lblNumTiles.Text = string.Format( "Tiles: {0}", numTiles);
             this.lblDuplicateTiles.Text = string.Format("Duplicate Tiles: {0}", duplicateTiles);
 
@@ -233,5 +236,10 @@ namespace GBImageConvertGUI
         }
 
         #endregion
+
+        private void checkbox16Metatiles_CheckedChanged(object sender, EventArgs e)
+        {
+            RefreshAll(); 
+        }
     }
 }

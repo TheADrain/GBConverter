@@ -63,6 +63,63 @@ namespace GBImageConverter
     }
     #endregion
 
+    #region GB TILESET
+    // basically just a List<GBTile> but with tile replacement table capability 
+    public class GBTileSet
+    {
+        private List<GBTile> tiles = new List<GBTile>();
+
+        private Dictionary<int, int> TileReplacements = new Dictionary<int, int>();
+        public Dictionary<int, int> GetTileReplacementTable() { return TileReplacements; }
+
+        public void AddTile(GBTile tile)
+        {
+            tiles.Add(tile);
+        }
+
+        public bool Contains(GBTile tile)
+        {
+            return tiles.Contains(tile);
+        }
+
+        public int Count()
+        {
+            return tiles.Count;
+        }
+
+        public GBTile GetTile(int index, bool ignoreReplacements = false)
+        {
+            if (!ignoreReplacements && TileReplacements.ContainsKey(index))
+            {
+                int replacement = TileReplacements[index];
+                return tiles[replacement];
+            }
+
+            return tiles[index];
+        }
+
+        public bool HasReplacementTileForIndex(int tileIndex)
+        {
+            return TileReplacements.ContainsKey(tileIndex);
+        }
+
+        public int GetTileReplacementIndex(int tileIdx)
+        {
+            if (TileReplacements.ContainsKey(tileIdx))
+            {
+                return TileReplacements[tileIdx];
+            }
+
+            return tileIdx;
+        }
+
+        public void AddReplacementTile(int tileIdx, int replaceWith)
+        {
+            TileReplacements.Add(tileIdx, replaceWith);
+        }
+    }
+    #endregion
+
     #region GB TILEMAP
     public class GBTileMap
     {
@@ -77,10 +134,12 @@ namespace GBImageConverter
         public GBTileMap()
         {
         }
+
         public bool HasCollisionPlane() { return CollisionPlane != null && CollisionPlane.Count == TilePlane.Count; }
         public int TileCount() { return _Width * _Height; }
         public int Width() { return _Width; }
         public int Height() { return _Height; }
+
         public int GetTile(int atIndex, TilePlanes plane)
         {
             if(atIndex < 0 || atIndex >= TileCount())
@@ -133,23 +192,24 @@ namespace GBImageConverter
             int idx = (y * _Width) + x;
             if (idx >= 0 && idx < TilePlane.Count)
             {
-                if (plane == TilePlanes.TILE)
-                {
-                    return TilePlane[idx];
-                }
-                else if(plane == TilePlanes.COLLISION)
-                {
-                    return CollisionPlane[idx];
-                }
+                   return GetTile(idx, plane);
             }
 
             return -1;
         }
 
-        public Bitmap GeneratePreview(GBTile[] tileData)
+        public void ApplyTileSetReplacements(GBTileSet tileset)
+        {
+            for(int i = 0; i < TilePlane.Count; i++)
+            {
+                //TilePlane[i] = tileset.GetTileReplacementIndex(TilePlane[i]);
+            }
+        }
+
+        public Bitmap GeneratePreview(GBTileSet tileData)
         {
             Bitmap bitmap = new Bitmap(_Width*8, _Height*8);
-            int tileDataCount = tileData.Length;
+            int tileDataCount = tileData.Count();
 
             for (int y = 0; y < _Height; y++)
             {
@@ -157,11 +217,18 @@ namespace GBImageConverter
                 {                    
                     int tileIdx = GetTile(x, y, TilePlanes.TILE);
                     int collisionData = GetTile(x, y, TilePlanes.COLLISION);
-                    if(tileIdx > 0 && tileIdx < tileDataCount)
+                    if(((tileIdx >= 0) && (tileIdx < tileDataCount)) || 
+                        (tileData.HasReplacementTileForIndex(tileIdx)))
                     {
-                        GBTile tile = tileData[tileIdx];
+                        GBTile tile = tileData.GetTile(tileIdx);
                         bool hasCollision = collisionData == 1;
                         PopulatePreviewTile(ref bitmap, x, y, ref tile, hasCollision);
+                    }
+                    else
+                    {
+                        // red square for index out of bounds data
+                        GBTile tile = tileData.GetTile(0);
+                        PopulatePreviewTile(ref bitmap, x, y, ref tile, true);
                     }
                 }
             }
@@ -361,27 +428,25 @@ namespace GBImageConverter
 
         public static void ImageToGBTileListAndTileMap(
             Bitmap bitmap, 
-            out List<GBTile> tile_list, 
+            out GBTileSet tile_list, 
             out GBTileMap tile_map, 
             bool keepDuplicates, 
-            out int numDuplicates)
+            out int numDuplicates
+            )
         {
             numDuplicates = 0;
             int tiles_x = bitmap.Width / 8;
             int tiles_y = bitmap.Height / 8;
 
-            
-
             int[,] greyscaleImage = GBImageUtils.GetLuminosityValuesFromImage(ref bitmap);
             int[,] twobpp_values = GBImageUtils.LuminosityTo2BPPColour(greyscaleImage, bitmap.Width, bitmap.Height);
 
-            tile_list = new List<GBTile>();
+            tile_list = new GBTileSet();
             tile_map = new GBTileMap();
             tile_map.SetDimensions(tiles_x, tiles_y);
 
             Dictionary<int, int> tile_indexes = new Dictionary<int, int>();
             int tileIdx = 0;
-            int tileNum = 0;
 
             for (int ty = 0; ty < tiles_y; ty++)
             {
@@ -404,52 +469,58 @@ namespace GBImageConverter
 
                     // count dupes
                     bool dupe = tile_list.Contains(gbtile);
-                    if(dupe)
-                    {
-                        numDuplicates++;
-                    }
+                    
 
                     // add dupe only if we want to keep them
                     if (dupe && keepDuplicates)
                     {
                         // process directly without caring about mapping to duplicate tiles
-                        tile_list.Add(gbtile);
+                        tile_list.AddTile(gbtile);
                         tile_map.AddTile(tileIdx);
                         tileIdx++;
-                        tileNum++;
                     }
                     else
                     {
-                        if(dupe)
+                        if (dupe)
+                        {
+                            numDuplicates++;
+                        }
+
+                        // index - numDupes to adjust for removed duplicates
+                        tile_map.AddTile(tileIdx - numDuplicates);
+
+                        if (!dupe)
+                        {
+                            tile_list.AddTile(gbtile);
+                            tile_indexes.Add(gbtile.GetHashCode(), tileIdx - numDuplicates);
+                            tile_list.AddReplacementTile(tileIdx, tileIdx - numDuplicates);
+                        }
+
+                        if (dupe)
                         {
                             // find the matching tile and add it to the tilemap
-                            tile_map.AddTile(tile_indexes[gbtile.GetHashCode()]);
+                            //tile_map.AddTile(tile_indexes[gbtile.GetHashCode()]);
+                            tile_list.AddReplacementTile(tileIdx, tile_indexes[gbtile.GetHashCode()]);
                         }
-                        else
-                        {
-                            // add the tile to the list and store its index for future matching tiles
-                            tile_list.Add(gbtile);
-                            tile_indexes.Add(gbtile.GetHashCode(), tileIdx);
 
-                            tile_map.AddTile(tile_indexes[gbtile.GetHashCode()]);
+                        
 
-                            tileIdx++;
-                            tileNum++;
-                        }
+                        tileIdx++;
                     }
                 }
             }
         }
 
-        public static Bitmap PreviewImageFromTileData(GBTile[] tiles, int width_in_tiles, GBPalette palette)
+        public static Bitmap PreviewImageFromTileData(GBTileSet tiles, int width_in_tiles, GBPalette palette)
         {
             int tiles_x = width_in_tiles;
-            int tiles_y = (int)Math.Ceiling(((double)tiles.Length / (double)width_in_tiles));
+            int tiles_y = (int)Math.Ceiling(((double)tiles.Count() / (double)width_in_tiles));
 
             int width = width_in_tiles * 8;
-            int height = (int)Math.Ceiling(((double)tiles.Length / (double)width_in_tiles)) * 8;
+            int height = (int)Math.Ceiling(((double)tiles.Count() / (double)width_in_tiles)) * 8;
 
             Bitmap bmp = new Bitmap(width, height);
+            bool ignoreReplacements = true;
 
             // set the entire image solid color first
             for(int x = 0; x < width; x++)
@@ -470,9 +541,9 @@ namespace GBImageConverter
                     GBTile tile = new GBTile();
                     // only get a tile if there is one, there may not be enough tiles
                     // to fill the last row of the preview image
-                    if (tileIdx < tiles.Length)
+                    if (tileIdx < tiles.Count())
                     {
-                        tile = tiles[tileIdx];
+                        tile = tiles.GetTile(tileIdx, ignoreReplacements);
                     }
 
                     for (int y = 0; y < 8; y++)
