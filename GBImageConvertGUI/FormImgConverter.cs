@@ -133,18 +133,29 @@ namespace GBImageConvertGUI
                 return;
             }
 
-            switch(comboExportFormat.SelectedIndex)
+            bool cullDupes = checkBox_RemoveDupes.Checked;
+
+            switch (comboExportFormat.SelectedIndex)
             {
                 case (int)GBImageConverter.OutputFormats.BIN:
-                    GBImageSerialization.SerializeGBTileDataBinary(_generated_tile_list, checkboxPrependTileCountByte.Checked);
+                    GBImageSerialization.SerializeGBTileDataBinary(
+                        _generated_tile_list, 
+                        checkboxPrependTileCountByte.Checked,
+                        cullDupes);
                     break;
 
                 case (int)GBImageConverter.OutputFormats.RGBASM:
-                    GBImageSerialization.SerializeGBTileDataRGBASM(_generated_tile_list, checkboxPrependTileCountByte.Checked);
+                    GBImageSerialization.SerializeGBTileDataRGBASM(
+                        _generated_tile_list, 
+                        checkboxPrependTileCountByte.Checked,
+                        cullDupes);
                     break;
 
                 case (int)GBImageConverter.OutputFormats.GBDK_C:
-                    GBImageSerialization.SerializeGBTileDataGBDK_C(_generated_tile_list, checkboxPrependTileCountByte.Checked);
+                    GBImageSerialization.SerializeGBTileDataGBDK_C(
+                        _generated_tile_list, 
+                        checkboxPrependTileCountByte.Checked,
+                        cullDupes);
                     break;
 
                 case (int)GBImageConverter.OutputFormats.BITMAP:
@@ -203,7 +214,7 @@ namespace GBImageConvertGUI
         private void RefreshGeneratedTiles()
         {
             int duplicateTiles = 0;
-            bool removeDupes = this.checkBox_RemoveDupes.Checked;
+            bool cullDupes = this.checkBox_RemoveDupes.Checked;
 
             // build the tile list and tile map
             _tilemapPreviewWidthInTiles = _previewBmp.Width / 8;
@@ -211,10 +222,14 @@ namespace GBImageConvertGUI
             GBImageUtils.ImageToGBTileListAndTileMap(_previewBmp, 
                 out _generated_tile_list, 
                 out _generated_tile_map, 
-                !removeDupes, 
+                !cullDupes, 
                 out duplicateTiles);
 
-            _previewTilesBmp = GBImageUtils.PreviewImageFromTileData(_generated_tile_list, _tilemapPreviewWidthInTiles, _palette);
+            _previewTilesBmp = GBImageUtils.PreviewImageFromTileData(
+                _generated_tile_list, 
+                _tilemapPreviewWidthInTiles, 
+                _palette, 
+                cullDupes);
 
             // set the preview image
             this.picTiles.Image = _previewTilesBmp;
@@ -226,7 +241,7 @@ namespace GBImageConvertGUI
                 _previewTilesBmp.Height* _tilemapPreviewMagnification);
 
             // populate the output data stats
-            int numTiles = _generated_tile_list.Count();
+            int numTiles = _generated_tile_list.Count(cullDupes);
             this.lblNumTiles.Text = string.Format( "Tiles: {0}", numTiles);
             this.lblDuplicateTiles.Text = string.Format("Duplicate Tiles: {0}", duplicateTiles);
 

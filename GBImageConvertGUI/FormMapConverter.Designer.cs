@@ -42,6 +42,7 @@
             this.checkboxPrependTileCountByte = new System.Windows.Forms.CheckBox();
             this.comboExportFormat = new System.Windows.Forms.ComboBox();
             this.btnImportCollision = new System.Windows.Forms.Button();
+            this.checkDuplicateReplacement = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.picTilesetPreview)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picMapPreview)).BeginInit();
             this.SuspendLayout();
@@ -209,12 +210,28 @@
             this.btnImportCollision.UseVisualStyleBackColor = true;
             this.btnImportCollision.Click += new System.EventHandler(this.btnImportCollision_Click);
             // 
+            // checkDuplicateReplacement
+            // 
+            this.checkDuplicateReplacement.AutoSize = true;
+            this.checkDuplicateReplacement.Checked = true;
+            this.checkDuplicateReplacement.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkDuplicateReplacement.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.checkDuplicateReplacement.ForeColor = System.Drawing.Color.White;
+            this.checkDuplicateReplacement.Location = new System.Drawing.Point(401, 536);
+            this.checkDuplicateReplacement.Name = "checkDuplicateReplacement";
+            this.checkDuplicateReplacement.Size = new System.Drawing.Size(285, 22);
+            this.checkDuplicateReplacement.TabIndex = 12;
+            this.checkDuplicateReplacement.Text = "Do Tileset Duplicate Replacement";
+            this.checkDuplicateReplacement.UseVisualStyleBackColor = true;
+            this.checkDuplicateReplacement.CheckedChanged += new System.EventHandler(this.checkDuplicateReplacement_CheckedChanged);
+            // 
             // FormMapConverter
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(23)))), ((int)(((byte)(30)))), ((int)(((byte)(54)))));
             this.ClientSize = new System.Drawing.Size(1044, 626);
+            this.Controls.Add(this.checkDuplicateReplacement);
             this.Controls.Add(this.checkPrependWidthHeight);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.checkboxPrependTileCountByte);
@@ -255,5 +272,6 @@
         private System.Windows.Forms.CheckBox checkboxPrependTileCountByte;
         private System.Windows.Forms.ComboBox comboExportFormat;
         private System.Windows.Forms.Button btnImportCollision;
+        private System.Windows.Forms.CheckBox checkDuplicateReplacement;
     }
 }

@@ -43,6 +43,8 @@ namespace GBImageConvertGUI
                 return;
             }
 
+            bool cullDupes = checkDuplicateReplacement.Checked;
+
             // grab the tileset from the img converter panel
             _generated_tile_list = _imgConverterForm.GetTileList();
 
@@ -53,7 +55,7 @@ namespace GBImageConvertGUI
             // load the preview of the map file
             if(_tileMap != null && _generated_tile_list != null)
             {
-                picMapPreview.Image = _tileMap.GeneratePreview(_generated_tile_list);
+                picMapPreview.Image = _tileMap.GeneratePreview(_generated_tile_list, cullDupes);
                 this.picMapPreview.SizeMode = PictureBoxSizeMode.Zoom;
             }
         }
@@ -61,13 +63,14 @@ namespace GBImageConvertGUI
         private void btnImportTiledCSV_Click(object sender, EventArgs e)
         {
             CSVResultCode result = TiledCSVToGBMap.LoadCSV(out _tileMap);
-            if(_generated_tile_list != null)
+
+            if (_generated_tile_list != null && checkDuplicateReplacement.Checked)
             {
                 // apply the replacements from the loaded tilemap
                 _tileMap.ApplyTileSetReplacements(_generated_tile_list);
             }
 
-            if(result == CSVResultCode.SUCCESS)
+            if (result == CSVResultCode.SUCCESS)
             {
                 RefreshAll();
             }
@@ -146,6 +149,11 @@ namespace GBImageConvertGUI
                         );
                     break;
             }
+        }
+
+        private void checkDuplicateReplacement_CheckedChanged(object sender, EventArgs e)
+        {
+            RefreshAll();
         }
     }
 }

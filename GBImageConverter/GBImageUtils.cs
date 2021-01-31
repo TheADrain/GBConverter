@@ -72,6 +72,9 @@ namespace GBImageConverter
         private Dictionary<int, int> TileReplacements = new Dictionary<int, int>();
         public Dictionary<int, int> GetTileReplacementTable() { return TileReplacements; }
 
+        public int NumDuplicates = 0;
+        public int NumUniqueDuplicates = 0;
+
         public void AddTile(GBTile tile)
         {
             tiles.Add(tile);
@@ -82,9 +85,9 @@ namespace GBImageConverter
             return tiles.Contains(tile);
         }
 
-        public int Count()
+        public int Count(bool cullDuplicates)
         {
-            return tiles.Count;
+            return cullDuplicates ? tiles.Count - NumUniqueDuplicates : tiles.Count;
         }
 
         public GBTile GetTile(int index, bool ignoreReplacements = false)
@@ -126,6 +129,9 @@ namespace GBImageConverter
         public enum TilePlanes { TILE, COLLISION }
 
         private List<int> TilePlane = new List<int>();
+        private List<int> TilePlaneWithReplacementsApplied = new List<int>();
+        private bool TilePlaneHasReplacements = false;
+
         private List<int> CollisionPlane = new List<int>();
         // todo: collision plane
         private int _Width;
@@ -147,7 +153,14 @@ namespace GBImageConverter
                 return -1;
             }
 
-            return plane == TilePlanes.TILE ? TilePlane[atIndex] : CollisionPlane[atIndex];
+            if(plane == TilePlanes.COLLISION)
+            {
+                return CollisionPlane[atIndex];
+            }
+            else
+            {
+                return TilePlaneHasReplacements ? TilePlaneWithReplacementsApplied[atIndex] : TilePlane[atIndex];
+            }
         }
 
         public void SetDimensions(int w, int h)
@@ -200,16 +213,21 @@ namespace GBImageConverter
 
         public void ApplyTileSetReplacements(GBTileSet tileset)
         {
-            for(int i = 0; i < TilePlane.Count; i++)
+            TilePlaneWithReplacementsApplied = new List<int>();
+            TilePlaneHasReplacements = true;
+
+            for (int i = 0; i < TilePlane.Count; i++)
             {
-                //TilePlane[i] = tileset.GetTileReplacementIndex(TilePlane[i]);
+                int original = TilePlane[i];
+                int replacement = tileset.GetTileReplacementIndex(TilePlane[i]);
+                TilePlaneWithReplacementsApplied.Add(replacement);
             }
         }
 
-        public Bitmap GeneratePreview(GBTileSet tileData)
+        public Bitmap GeneratePreview(GBTileSet tileData, bool cullDuplicates)
         {
             Bitmap bitmap = new Bitmap(_Width*8, _Height*8);
-            int tileDataCount = tileData.Count();
+            int tileDataCount = tileData.Count(cullDuplicates);
 
             for (int y = 0; y < _Height; y++)
             {
@@ -220,7 +238,7 @@ namespace GBImageConverter
                     if(((tileIdx >= 0) && (tileIdx < tileDataCount)) || 
                         (tileData.HasReplacementTileForIndex(tileIdx)))
                     {
-                        GBTile tile = tileData.GetTile(tileIdx);
+                        GBTile tile = tileData.GetTile(tileIdx, TilePlaneHasReplacements);
                         bool hasCollision = collisionData == 1;
                         PopulatePreviewTile(ref bitmap, x, y, ref tile, hasCollision);
                     }
@@ -446,6 +464,7 @@ namespace GBImageConverter
             tile_map.SetDimensions(tiles_x, tiles_y);
 
             Dictionary<int, int> tile_indexes = new Dictionary<int, int>();
+            List<int> uniqueDuplicates = new List<int>();
             int tileIdx = 0;
 
             for (int ty = 0; ty < tiles_y; ty++)
@@ -484,6 +503,10 @@ namespace GBImageConverter
                         if (dupe)
                         {
                             numDuplicates++;
+                            if(!uniqueDuplicates.Contains(tile_indexes[gbtile.GetHashCode()]))
+                            {
+                                uniqueDuplicates.Add(tile_indexes[gbtile.GetHashCode()]);
+                            }
                         }
 
                         // index - numDupes to adjust for removed duplicates
@@ -509,15 +532,18 @@ namespace GBImageConverter
                     }
                 }
             }
+
+            tile_list.NumDuplicates = numDuplicates;
+            tile_list.NumUniqueDuplicates = uniqueDuplicates.Count;
         }
 
-        public static Bitmap PreviewImageFromTileData(GBTileSet tiles, int width_in_tiles, GBPalette palette)
+        public static Bitmap PreviewImageFromTileData(GBTileSet tiles, int width_in_tiles, GBPalette palette, bool cullDuplicates)
         {
             int tiles_x = width_in_tiles;
-            int tiles_y = (int)Math.Ceiling(((double)tiles.Count() / (double)width_in_tiles));
+            int tiles_y = (int)Math.Ceiling(((double)tiles.Count(cullDuplicates) / (double)width_in_tiles));
 
             int width = width_in_tiles * 8;
-            int height = (int)Math.Ceiling(((double)tiles.Count() / (double)width_in_tiles)) * 8;
+            int height = (int)Math.Ceiling(((double)tiles.Count(cullDuplicates) / (double)width_in_tiles)) * 8;
 
             Bitmap bmp = new Bitmap(width, height);
             bool ignoreReplacements = true;
@@ -541,7 +567,7 @@ namespace GBImageConverter
                     GBTile tile = new GBTile();
                     // only get a tile if there is one, there may not be enough tiles
                     // to fill the last row of the preview image
-                    if (tileIdx < tiles.Count())
+                    if (tileIdx < tiles.Count(cullDuplicates))
                     {
                         tile = tiles.GetTile(tileIdx, ignoreReplacements);
                     }
