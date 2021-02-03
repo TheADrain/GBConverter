@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static GBImageConvertGUI.JSONToGBMap;
 using static GBImageConvertGUI.TiledCSVToGBMap;
 
 namespace GBImageConvertGUI
@@ -57,6 +58,44 @@ namespace GBImageConvertGUI
             {
                 picMapPreview.Image = _tileMap.GeneratePreview(_generated_tile_list, cullDupes);
                 this.picMapPreview.SizeMode = PictureBoxSizeMode.Zoom;
+            }
+        }
+
+        private void btn_importJSON_Click(object sender, EventArgs e)
+        {
+            // import both map and collision and special properties as JSON
+            JSONResultCode result = JSONToGBMap.LoadJSON(out _tileMap);
+
+            if (_generated_tile_list != null && checkDuplicateReplacement.Checked)
+            {
+                // apply the replacements from the loaded tilemap
+                _tileMap.ApplyTileSetReplacements(_generated_tile_list);
+            }
+
+            if (result == JSONResultCode.SUCCESS)
+            {
+                RefreshAll();
+            }
+            else
+            {
+                switch (result)
+                {
+                    case JSONResultCode.DIMENSIONS_DONT_MATCH_TILEARRAY_LENGTH:
+                        lblError.Text = @"ERROR: Inconsistent dimensions detected in map.";
+                        break;
+                    case JSONResultCode.INVALID_VALUE_DETECTED:
+                        lblError.Text = @"ERROR: An invalid value (non-integer, or integer below 0 was detected in the source map!";
+                        break;
+                    case JSONResultCode.FAIL_INVALID_BACKGROUND_TILEDATA:
+                        lblError.Text = @"ERROR: An invalid value (non-integer, or integer below 0 was detected in background map!";
+                        break;
+                    case JSONResultCode.FAIL_INVALID_COLLISION_TILEDATA:
+                        lblError.Text = @"ERROR: An invalid value (non-integer, or integer below 0 was detected in collision map!";
+                        break;
+                    default:
+                        lblError.Text = @"ERROR: Unknown Error occured while loading JSON map file.";
+                        break;
+                }
             }
         }
 

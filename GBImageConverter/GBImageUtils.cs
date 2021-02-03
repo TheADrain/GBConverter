@@ -127,10 +127,23 @@ namespace GBImageConverter
     public class GBTileMap
     {
         public enum TilePlanes { TILE, COLLISION }
-
         private List<int> TilePlane = new List<int>();
         private List<int> TilePlaneWithReplacementsApplied = new List<int>();
         private bool TilePlaneHasReplacements = false;
+
+        public enum MapOrientation { ROWS_FIRST, COLUMNS_FIRST }
+
+        private MapOrientation Orientation = MapOrientation.COLUMNS_FIRST;
+
+        public void SetOrientation (MapOrientation orientation)
+        {
+            Orientation = orientation;
+        }
+
+        public MapOrientation GetOrientation()
+        {
+            return Orientation;
+        }
 
         private List<int> CollisionPlane = new List<int>();
         // todo: collision plane
@@ -148,12 +161,12 @@ namespace GBImageConverter
 
         public int GetTile(int atIndex, TilePlanes plane)
         {
-            if(atIndex < 0 || atIndex >= TileCount())
+            if (atIndex < 0 || atIndex >= TileCount())
             {
                 return -1;
             }
 
-            if(plane == TilePlanes.COLLISION)
+            if (plane == TilePlanes.COLLISION)
             {
                 return CollisionPlane[atIndex];
             }
@@ -169,29 +182,33 @@ namespace GBImageConverter
             _Height = h;
         }
 
-        public void AddTile(int tile)
+        public void AddTile(int tile, TilePlanes plane = TilePlanes.TILE)
         {
-            TilePlane.Add(tile);
-
-            // default to no collision, build collision plane after the main tile plane
-            CollisionPlane.Add(0);
+            if (plane == TilePlanes.TILE)
+            {
+                TilePlane.Add(tile);
+            }
+            else if (plane == TilePlanes.COLLISION)
+            {
+                CollisionPlane.Add(tile);
+            }
         }
 
         public bool SetTile(int x, int y, int tile, TilePlanes plane)
         {
-            if(x < 0 || x >= _Width || y < 0 || y >= _Height)
+            if (x < 0 || x >= _Width || y < 0 || y >= _Height)
             {
                 return false;
             }
 
             int idx = (y * _Width) + x;
-            if(idx >= 0 && idx < TilePlane.Count)
+            if (idx >= 0 && idx < TilePlane.Count)
             {
                 if (plane == TilePlanes.TILE)
                 {
                     TilePlane[idx] = tile;
                 }
-                else if(plane == TilePlanes.COLLISION)
+                else if (plane == TilePlanes.COLLISION)
                 {
                     CollisionPlane[idx] = tile;
                 }
@@ -205,7 +222,7 @@ namespace GBImageConverter
             int idx = (y * _Width) + x;
             if (idx >= 0 && idx < TilePlane.Count)
             {
-                   return GetTile(idx, plane);
+                return GetTile(idx, plane);
             }
 
             return -1;
@@ -226,16 +243,16 @@ namespace GBImageConverter
 
         public Bitmap GeneratePreview(GBTileSet tileData, bool cullDuplicates)
         {
-            Bitmap bitmap = new Bitmap(_Width*8, _Height*8);
+            Bitmap bitmap = new Bitmap(_Width * 8, _Height * 8);
             int tileDataCount = tileData.Count(cullDuplicates);
 
             for (int y = 0; y < _Height; y++)
             {
                 for (int x = 0; x < _Width; x++)
-                {                    
+                {
                     int tileIdx = GetTile(x, y, TilePlanes.TILE);
                     int collisionData = GetTile(x, y, TilePlanes.COLLISION);
-                    if(((tileIdx >= 0) && (tileIdx < tileDataCount)) || 
+                    if (((tileIdx >= 0) && (tileIdx < tileDataCount)) ||
                         (tileData.HasReplacementTileForIndex(tileIdx)))
                     {
                         GBTile tile = tileData.GetTile(tileIdx, TilePlaneHasReplacements);
@@ -257,7 +274,7 @@ namespace GBImageConverter
         private void PopulatePreviewTile(ref Bitmap bmp, int tx, int ty, ref GBTile tile, bool hasCollision)
         {
             GBPalette defaultPalette = new GBPalette();
-            
+
 
             int px = tx * 8;
             int py = ty * 8;
@@ -269,7 +286,7 @@ namespace GBImageConverter
                     // handle collision plane preview with a red tint
                     Color collisionCol = Color.FromArgb(byte.MaxValue, defaultCol.G, defaultCol.B);
 
-                    bmp.SetPixel(px+x, py+y, hasCollision ? collisionCol : defaultCol);
+                    bmp.SetPixel(px + x, py + y, hasCollision ? collisionCol : defaultCol);
                 }
             }
         }
