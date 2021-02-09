@@ -133,7 +133,7 @@ namespace GBImageConverter
 
         public enum MapOrientation { ROWS_FIRST, COLUMNS_FIRST }
 
-        private MapOrientation Orientation = MapOrientation.COLUMNS_FIRST;
+        private MapOrientation Orientation = MapOrientation.ROWS_FIRST;
 
         public void SetOrientation (MapOrientation orientation)
         {
@@ -507,46 +507,38 @@ namespace GBImageConverter
                     bool dupe = tile_list.Contains(gbtile);
                     
 
-                    // add dupe only if we want to keep them
-                    if (dupe && keepDuplicates)
+                    if (dupe)
                     {
-                        // process directly without caring about mapping to duplicate tiles
+                        numDuplicates++;
+                        if(!uniqueDuplicates.Contains(tile_indexes[gbtile.GetHashCode()]))
+                        {
+                            uniqueDuplicates.Add(tile_indexes[gbtile.GetHashCode()]);
+                        }
+                    }
+
+                    // index - numDupes to adjust for removed duplicates
+                    tile_map.AddTile(tileIdx - numDuplicates);
+
+                    if (!dupe || keepDuplicates)
+                    {
                         tile_list.AddTile(gbtile);
-                        tile_map.AddTile(tileIdx);
-                        tileIdx++;
-                    }
-                    else
-                    {
-                        if (dupe)
-                        {
-                            numDuplicates++;
-                            if(!uniqueDuplicates.Contains(tile_indexes[gbtile.GetHashCode()]))
-                            {
-                                uniqueDuplicates.Add(tile_indexes[gbtile.GetHashCode()]);
-                            }
-                        }
 
-                        // index - numDupes to adjust for removed duplicates
-                        tile_map.AddTile(tileIdx - numDuplicates);
-
-                        if (!dupe)
+                        if(!tile_indexes.ContainsKey(gbtile.GetHashCode()))
                         {
-                            tile_list.AddTile(gbtile);
-                            tile_indexes.Add(gbtile.GetHashCode(), tileIdx - numDuplicates);
                             tile_list.AddReplacementTile(tileIdx, tileIdx - numDuplicates);
+                            tile_indexes.Add(gbtile.GetHashCode(), tileIdx - numDuplicates);
                         }
-
-                        if (dupe)
-                        {
-                            // find the matching tile and add it to the tilemap
-                            //tile_map.AddTile(tile_indexes[gbtile.GetHashCode()]);
-                            tile_list.AddReplacementTile(tileIdx, tile_indexes[gbtile.GetHashCode()]);
-                        }
-
-                        
-
-                        tileIdx++;
                     }
+
+                    if (dupe)
+                    {
+                        // find the matching tile and add it to the tilemap
+                        //tile_map.AddTile(tile_indexes[gbtile.GetHashCode()]);
+                        tile_list.AddReplacementTile(tileIdx, tile_indexes[gbtile.GetHashCode()]);
+                    }
+
+                    tileIdx++;
+                    
                 }
             }
 

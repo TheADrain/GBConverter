@@ -234,24 +234,30 @@ namespace GBImageConvertGUI
             /* READ PROPERTIES */
 
             JArray properties = (JArray)data["properties"];
-            
-            foreach (var prop in properties)
+            if (properties != null)
             {
-                string propName = (string)prop["name"];
-                propName = propName.ToLowerInvariant();
-
-                if (propName.CompareTo("scrolldirection") == 0)
+                foreach (var prop in properties)
                 {
-                    string direction = (string)prop["value"];
-                    if (direction.ToLowerInvariant().CompareTo("Vertical") == 0)
+                    string propName = (string)prop["name"];
+                    propName = propName.ToLowerInvariant();
+
+                    if (propName.CompareTo("scrolldirection") == 0)
                     {
-                        map.SetOrientation(MapOrientation.ROWS_FIRST);
-                    }
-                    else
-                    {
-                        map.SetOrientation(MapOrientation.ROWS_FIRST);
+                        string direction = (string)prop["value"];
+                        if (direction.ToLowerInvariant().CompareTo("vertical") == 0)
+                        {
+                            map.SetOrientation(MapOrientation.ROWS_FIRST);
+                        }
+                        else
+                        {
+                            map.SetOrientation(MapOrientation.COLUMNS_FIRST);
+                        }
                     }
                 }
+            }
+            else
+            {
+                map.SetOrientation(MapOrientation.ROWS_FIRST);
             }
 
             int height = (int)data["height"];
@@ -329,7 +335,7 @@ namespace GBImageConvertGUI
             int gidOffset = 0,
             bool forceRowsFirst = false)
         {
-            if (map.GetOrientation() == MapOrientation.ROWS_FIRST)
+            if (map.GetOrientation() == MapOrientation.ROWS_FIRST || forceRowsFirst)
             {
                 map.SetOrientation(MapOrientation.ROWS_FIRST);
                 // default ordering 

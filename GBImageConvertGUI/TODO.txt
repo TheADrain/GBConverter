@@ -1,6 +1,9 @@
 ﻿TODO - GB IMG CONVERTER and GUI
 
 Export Fixes! top priority
+	- fix the preview image to be able to draw column-first oriented maps
+	- something is still wrong with the duplicate tile cull/swap code...
+--------------------------------------------------------------------------
 
 - avoid extern keyword (don't think we're using this tbh)
 - overhaul command line version in order to support better asset building toolchain
